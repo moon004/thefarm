@@ -117,12 +117,35 @@ func (tf *TheFarm) onKey(evname string, ev interface{}) {
 	}
 }
 
+func (tf *TheFarm) onCursor(evname string, ev interface{}) {
+	var dir math32.Vector3
+
+	tf.camera.WorldDirection(&dir)
+	tf.stepDelta.Set(0, 0)
+
+	if math32.Abs(dir.Z) > math32.Abs(dir.X) {
+		if dir.Z > 0 {
+			tf.stepDelta.Y = 1
+		} else {
+			tf.stepDelta.Y = -1
+		}
+	} else {
+		if dir.X > 0 {
+			tf.stepDelta.X = 1
+		} else {
+			tf.stepDelta.X = -1
+		}
+	}
+}
+
 // LoadStage loads the stage and put inside tf.stage
 func (tf *TheFarm) LoadStage() {
 	log.Debug("Loading Stage")
 
 	tf.stage = NewFarm(tf, tf.camera)
 	tf.stageScene.Add(tf.stage.scene)
+	// allow camera movement
+	tf.orbitControl.Enabled = true
 }
 
 // loadAudioLibs
@@ -164,6 +187,18 @@ func (tf *TheFarm) LoadAudio() {
 
 	tf.musicPlayer = createPlayer(tf.dataDir + "/assets/BGM.ogg")
 	tf.musicPlayer.SetLooping(true)
+}
+
+// PlaySound just play the sound by:
+// PlaySound(tf.musicPlayer, nil)
+func (tf *TheFarm) PlaySound(player *audio.Player, node *core.Node) {
+	if tf.audioAvailable {
+		if node != nil {
+			node.Add(player)
+		}
+		player.Stop()
+		player.Play()
+	}
 }
 
 func main() {
@@ -287,9 +322,12 @@ func main() {
 	} else {
 		tf.audioAvailable = true
 		tf.LoadAudio()
+		tf.musicPlayer.Play()
 	}
 	tf.CreateChar(tf.dataDir+"/assets/t1.png", "sphere")
 	tf.LoadStage()
+
+	tf.win.Subscribe(window.OnCursor, tf.onCursor)
 
 	now := time.Now()
 	newNow := time.Now()
