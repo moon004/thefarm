@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	logs "log" // avoid conflict with log *logger.Logger
 	"os"
 
 	"github.com/fatih/color"
@@ -12,7 +12,7 @@ import (
 func Errs(err error) {
 	if err != nil {
 		red := color.New(color.FgRed).SprintFunc()
-		log.Fatalf(fmt.Sprintf("%s %v", red("error:"), err))
+		logs.Fatalf(fmt.Sprintf("%s %v", red("error:"), err))
 		os.Exit(1) // exit with error code 1
 	}
 }

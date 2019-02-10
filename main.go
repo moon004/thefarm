@@ -8,34 +8,44 @@ import (
 	"strings"
 	"time"
 
+	"github.com/g3n/engine/audio/al"
+	"github.com/g3n/engine/audio/vorbis"
+	"github.com/g3n/engine/geometry"
+	"github.com/g3n/engine/graphic"
+	"github.com/g3n/engine/material"
+	"github.com/g3n/engine/texture"
+
 	"github.com/g3n/engine/audio"
 	"github.com/g3n/engine/camera"
 	"github.com/g3n/engine/camera/control"
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/renderer"
 	"github.com/g3n/engine/util/logger"
 	"github.com/g3n/engine/window"
+	"github.com/pkg/errors"
 )
 
 var log *logger.Logger
 
+// TheFarm is the main struct of the application
 type TheFarm struct {
-	wmgr     window.IWindowManager
-	win      window.IWindow
-	gs       *gls.GLS
-	renderer *renderer.Renderer
-	scene    *core.Node
-	camera   *camera.Perspective
-	dataDir  string
+	wmgr         window.IWindowManager
+	win          window.IWindow
+	gs           *gls.GLS
+	renderer     *renderer.Renderer
+	scene        *core.Node
+	camera       *camera.Perspective
+	orbitControl *control.OrbitControl
+	dataDir      string
 
 	userData  *UserData
 	stepDelta *math32.Vector2
 
-	levelScene     *core.Node
+	stageScene     *core.Node
+	stage          *Stage
 	charNode       *core.Node
 	audioAvailable bool
 
@@ -44,18 +54,116 @@ type TheFarm struct {
 	charCreateSnd *audio.Player
 }
 
-func (farm *TheFarm) ResetFarm(playsound bool) {
+// ResetFarm clears all the characters.
+func (tf *TheFarm) ResetFarm() {
 	log.Debug("Reset Farm")
 
-	farm.charNode = 0
+	tf.charNode = nil
 
 }
 
 // ToggleFullScreen toggles whether is game is fullscreen or windowed
-func (g *TheFarm) ToggleFullScreen() {
+func (tf *TheFarm) ToggleFullScreen() {
 	log.Debug("Toggle FullScreen")
 
-	g.win.SetFullScreen(!g.win.FullScreen())
+	tf.win.SetFullScreen(!tf.win.FullScreen())
+}
+
+// Update updates the current stage if any
+func (tf *TheFarm) Update(timeDelta float64) {
+	if tf.stage != nil {
+		tf.stage.Update(timeDelta)
+	}
+}
+
+// CreateChar creates character and add it to the Scene
+// in g3n, Scene is actually *core.Node and adding
+// *core.Node is actually adding object to Scene
+func (tf *TheFarm) CreateChar(txName, name string) {
+	log.Debug("Creating Character")
+
+	tx, err := texture.NewTexture2DFromImage(txName)
+	Errs(err)
+	geom := geometry.NewSphere(
+		float64(0.2),
+		2,
+		2,
+		float64(0),
+		float64(2),
+		float64(0),
+		float64(2),
+	)
+
+	// adding the texture to the shape
+	mat := material.NewPhong(math32.NewColor("White"))
+	mat.AddTexture(tx)
+	shape := graphic.NewMesh(geom, mat)
+	shape.SetName(name)
+	shape.SetPosition(float32(2), float32(1), float32(2))
+	tf.charNode = core.NewNode()
+	tf.charNode.Add(shape)
+	log.Debug("New character CREATED!")
+
+}
+
+// onKey handles key R and key Enter
+func (tf *TheFarm) onKey(evname string, ev interface{}) {
+	kev := ev.(*window.KeyEvent) // return key events
+	switch kev.Keycode {
+	case window.KeyR:
+		tf.ToggleFullScreen()
+	case window.KeyEnter:
+		tf.ResetFarm()
+	}
+}
+
+// LoadStage loads the stage and put inside tf.stage
+func (tf *TheFarm) LoadStage() {
+	log.Debug("Loading Stage")
+
+	tf.stage = NewFarm(tf, tf.camera)
+	tf.stageScene.Add(tf.stage.scene)
+}
+
+// loadAudioLibs
+func loadAudioLibs() error {
+
+	// Open default audio device
+	dev, err := al.OpenDevice("")
+	Errs(errors.Wrap(err, "Error opening OpenAL default device"))
+
+	// Create audio context
+	acx, err := al.CreateContext(dev, nil)
+	Errs(errors.Wrap(err, "Error creating audio context"))
+
+	// Make the context the current one
+	err = al.MakeContextCurrent(acx)
+	Errs(errors.Wrap(err, "Error setting audio context current"))
+	log.Debug("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
+	log.Debug("%s", vorbis.VersionString())
+	return nil
+}
+
+// LoadAudio loads music and sound effects
+func (tf *TheFarm) LoadAudio() {
+	log.Debug("Load Audio")
+
+	// Create listener and add it to the current camera
+	listener := audio.NewListener()
+	cdir := tf.camera.Direction()
+	listener.SetDirectionVec(&cdir)
+	tf.camera.GetCamera().Add(listener)
+
+	// Helper function to create player and handle errors
+	createPlayer := func(fname string) *audio.Player {
+		log.Debug("Loading " + fname)
+		p, err := audio.NewPlayer(fname)
+		Errs(errors.Wrapf(err, "Failed to create player for: %v", fname))
+		return p
+	}
+
+	tf.musicPlayer = createPlayer(tf.dataDir + "/assets/BGM.ogg")
+	tf.musicPlayer.SetLooping(true)
 }
 
 func main() {
@@ -76,162 +184,140 @@ func main() {
 	}
 
 	// Create TheFarm struct
-	f := new(TheFarm)
+	tf := new(TheFarm)
 
 	// Manually scan the $GOPATH directories to find the data directory
 	rawPaths := os.Getenv("GOPATH")
 	paths := strings.Split(rawPaths, ":")
 	for _, j := range paths {
 		// Checks data path
-		path := filepath.Join(j, "src", "github.com", "moon004", "TheFarm")
+		path := filepath.Join(j, "src", "github.com", "louis-project")
 		if _, err := os.Stat(path); err == nil {
-			f.dataDir = path
+			tf.dataDir = path
 		}
-		Errs(err)
 	}
 
 	// Load user data from file
-	f.userData = NewUserData(f.dataDir)
+	// userData {
+	// MusicOn    bool
+	// SfxOn      bool
+	// MusicVol   float32
+	// SfxVol     float32
+	// FullScreen bool
+	// }
+	tf.userData = NewUserData(tf.dataDir)
 
 	// Get the window manager
 	var err error
-	f.wmgr, err = window.Manager("glfw")
-	if err != nil {
-		panic(err)
-	}
+	tf.wmgr, err = window.Manager("glfw")
+	Errs(err)
 
 	// Create window and OpenGL context
-	f.win, err = f.wmgr.CreateWindow(1200, 900, "Farm", f.userData.FullScreen)
-	if err != nil {
-		panic(err)
-	}
+	tf.win, err = tf.wmgr.CreateWindow(1200, 900, "Farm", tf.userData.FullScreen)
+	Errs(err)
 
 	// Create OpenGL state
-	f.gs, err = gls.New()
-	if err != nil {
-		panic(err)
-	}
+	tf.gs, err = gls.New()
+	Errs(err)
 
 	// Speed up a bit by not checking OpenGL errors
-	f.gs.SetCheckErrors(false)
+	tf.gs.SetCheckErrors(false)
 
 	// Sets window background color
-	f.gs.ClearColor(0.1, 0.1, 0.1, 1.0)
+	tf.gs.ClearColor(0.1, 0.1, 0.1, 1.0)
 
 	// Sets the OpenGL viewport size the same as the window size
 	// This normally should be updated if the window is resized.
-	width, height := f.win.Size()
-	f.gs.Viewport(0, 0, int32(width), int32(height))
-
-	// Creates GUI root panel
-	f.root = gui.NewRoot(f.gs, f.win)
-	f.root.SetSize(float32(width), float32(height))
+	width, height := tf.win.Size()
+	tf.gs.Viewport(0, 0, int32(width), int32(height))
 
 	// Subscribe to window resize events. When the window is resized:
 	// - Update the viewport size
 	// - Update the root panel size
 	// - Update the camera aspect ratio
-	f.win.Subscribe(window.OnWindowSize, func(evname string, ev interface{}) {
-		width, height := f.win.Size()
-		f.gs.Viewport(0, 0, int32(width), int32(height))
-		f.root.SetSize(float32(width), float32(height))
+	tf.win.Subscribe(window.OnWindowSize, func(evname string, ev interface{}) {
+		width, height := tf.win.Size()
+		tf.gs.Viewport(0, 0, int32(width), int32(height))
 		aspect := float32(width) / float32(height)
-		f.camera.SetAspect(aspect)
+		tf.camera.SetAspect(aspect)
 	})
 
 	// Subscribe window to events
-	f.win.Subscribe(window.OnKeyDown, f.onKey)
-	f.win.Subscribe(window.OnMouseUp, f.onMouse)
-	f.win.Subscribe(window.OnMouseDown, f.onMouse)
+	tf.win.Subscribe(window.OnKeyDown, tf.onKey)
 
 	// Creates a renderer and adds default shaders
-	f.renderer = renderer.NewRenderer(f.gs)
-	//f.renderer.SetSortObjects(false)
-	err = f.renderer.AddDefaultShaders()
-	if err != nil {
-		panic(err)
-	}
-	f.renderer.SetGui(f.root)
+	tf.renderer = renderer.NewRenderer(tf.gs)
+	//tf.renderer.SetSortObjects(false)
+	err = tf.renderer.AddDefaultShaders()
+	Errs(err)
 
 	// Adds a perspective camera to the scene
 	// The camera aspect ratio should be updated if the window is resized.
 	aspect := float32(width) / float32(height)
-	f.camera = camera.NewPerspective(65, aspect, 0.01, 1000)
-	f.camera.SetPosition(0, 4, 5)
-	f.camera.LookAt(&math32.Vector3{0, 0, 0})
+	tf.camera = camera.NewPerspective(65, aspect, 0.01, 1000)
+	tf.camera.SetPosition(0, 4, 5)
+	tf.camera.LookAt(&math32.Vector3{0, 0, 0})
 
 	// Create orbit control and set limits
-	f.orbitControl = control.NewOrbitControl(f.camera, f.win)
-	f.orbitControl.Enabled = false
-	f.orbitControl.EnablePan = false
-	f.orbitControl.MaxPolarAngle = 2 * math32.Pi / 3
-	f.orbitControl.MinDistance = 5
-	f.orbitControl.MaxDistance = 15
+	tf.orbitControl = control.NewOrbitControl(tf.camera, tf.win)
+	tf.orbitControl.Enabled = false
+	tf.orbitControl.EnablePan = false
+	tf.orbitControl.MaxPolarAngle = 2 * math32.Pi / 3
+	tf.orbitControl.MinDistance = 5
+	tf.orbitControl.MaxDistance = 15
 
-	// Create main scene and child levelScene
-	f.scene = core.NewNode()
-	f.levelScene = core.NewNode()
-	f.scene.Add(f.camera)
-	f.scene.Add(f.levelScene)
-	f.stepDelta = math32.NewVector2(0, 0)
-	f.renderer.SetScene(f.scene)
+	// Create main scene and child stageScene
+	tf.scene = core.NewNode()
+	tf.stageScene = core.NewNode()
+	tf.scene.Add(tf.camera)
+	tf.scene.Add(tf.stageScene)
+	tf.stepDelta = math32.NewVector2(0, 0)
+	tf.renderer.SetScene(tf.scene)
 
 	// Add white ambient light to the scene
 	ambLight := light.NewAmbient(&math32.Color{1.0, 1.0, 1.0}, 0.4)
-	f.scene.Add(ambLight)
+	tf.scene.Add(ambLight)
 
-	f.levelStyle = NewStandardStyle(f.dataDir)
-
-	f.SetupGui(width, height)
-	f.RenderFrame()
+	tf.RenderFrame()
 
 	// Try to open audio libraries
 	err = loadAudioLibs()
 	if err != nil {
-		lof.Error("%s", err)
-		f.UpdateMusicButton(false)
-		f.UpdateSfxButton(false)
-		f.musicButton.SetEnabled(false)
-		f.sfxButton.SetEnabled(false)
+		Errs(err)
 	} else {
-		f.audioAvailable = true
-		f.LoadAudio()
-		f.UpdateMusicButton(f.userData.MusicOn)
-		f.UpdateSfxButton(f.userData.SfxOn)
-
-		// Queue the music!
-		f.musicPlayerMenu.Play()
+		tf.audioAvailable = true
+		tf.LoadAudio()
 	}
-
-	f.LoadSkyBox()
-	f.LoadGopher()
-	f.CreateArrowNode()
-	f.LoadLevels()
-
-	f.win.Subscribe(window.OnCursor, f.onCursor)
-
-	if f.userData.LastUnlockedLevel == len(f.levels) {
-		f.titleImage.SetImage(gui.ButtonDisabled, f.dataDir+"/gui/title3_completed.png")
-	}
-
-	// Done Loading - hide the loading label, show the menu, and initialize the level
-	f.loadingLabel.SetVisible(false)
-	f.menu.Add(f.main)
-	f.InitLevel(f.userData.LastLevel)
-	f.gopherLocked = true
+	tf.CreateChar(tf.dataDir+"/assets/t1.png", "sphere")
+	tf.LoadStage()
 
 	now := time.Now()
 	newNow := time.Now()
-	lof.Info("Starting Render Loop")
+	log.Debug("Starting Render Loop")
 
 	// Start the render loop
-	for !f.win.ShouldClose() {
-
+	for !tf.win.ShouldClose() {
 		newNow = time.Now()
 		timeDelta := now.Sub(newNow)
 		now = newNow
 
-		f.Update(timeDelta.Seconds())
-		f.RenderFrame()
+		tf.Update(timeDelta.Seconds())
+		tf.RenderFrame()
+	}
+}
+
+// RenderFrame renders a frame of the scene with the GUI overlaid
+func (tf *TheFarm) RenderFrame() {
+
+	// Render the scene/gui using the specified camera
+	rendered, err := tf.renderer.Render(tf.camera)
+	Errs(err)
+
+	// Check I/O events
+	tf.wmgr.PollEvents()
+
+	// Update window if necessary
+	if rendered {
+		tf.win.SwapBuffers()
 	}
 }

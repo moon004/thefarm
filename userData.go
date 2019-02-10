@@ -6,7 +6,6 @@ package main
 
 import (
 	"encoding/gob"
-	"gx/ipfs/QmTWEDbLX2d4NiMgPks6J2crRz47BamBtP16WiFuTL6Ydm/common/log"
 	"os"
 )
 
@@ -15,13 +14,11 @@ const USER_DATA_FILENAME string = "/user.data"
 
 // UserData stores all the information that persists between game sessions
 type UserData struct {
-	MusicOn           bool
-	SfxOn             bool
-	MusicVol          float32
-	SfxVol            float32
-	FullScreen        bool
-	LastLevel         int
-	LastUnlockedLevel int
+	MusicOn    bool
+	SfxOn      bool
+	MusicVol   float32
+	SfxVol     float32
+	FullScreen bool
 }
 
 // NewUserData loads user data from file or creates a new object with default values if no file exists
@@ -47,8 +44,6 @@ func NewUserData(dataDir string) *UserData {
 		ud.SfxVol = 0.5
 		ud.MusicVol = 0.5
 		ud.FullScreen = false
-		ud.LastLevel = 0
-		ud.LastUnlockedLevel = 0
 		log.Debug("Creating new user data with default values: %+v", ud)
 	} else {
 		log.Debug("Loaded user data: %+v", ud)
