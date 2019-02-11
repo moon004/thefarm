@@ -13,7 +13,6 @@ import (
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/texture"
 
 	"github.com/g3n/engine/audio"
 	"github.com/g3n/engine/camera"
@@ -82,8 +81,6 @@ func (tf *TheFarm) Update(timeDelta float64) {
 func (tf *TheFarm) CreateChar(txName, name string) {
 	log.Debug("Creating Character")
 
-	tx, err := texture.NewTexture2DFromImage(txName)
-	Errs(err)
 	geom := geometry.NewSphere(
 		float64(0.2),
 		2,
@@ -96,12 +93,13 @@ func (tf *TheFarm) CreateChar(txName, name string) {
 
 	// adding the texture to the shape
 	mat := material.NewPhong(math32.NewColor("White"))
-	mat.AddTexture(tx)
-	shape := graphic.NewMesh(geom, mat)
-	shape.SetName(name)
-	shape.SetPosition(float32(2), float32(1), float32(2))
+	mat.AddTexture(NewTexture(txName))
+	sphere := graphic.NewMesh(geom, mat)
+	sphere.SetName(name)
+	sphere.SetPosition(0, 0, 0)
 	tf.charNode = core.NewNode()
-	tf.charNode.Add(shape)
+	tf.charNode.Add(sphere)
+
 	log.Debug("New character CREATED!")
 
 }
