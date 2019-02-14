@@ -32,12 +32,10 @@ func NewFarm(tf *TheFarm, cam *camera.Perspective) *Stage {
 	stg.scene.SetPosition(0, 0, 0)
 	// Make Plane
 	groundMaterial := material.NewPhong(math32.NewColor("Brown"))
-	groundMaterial.AddTexture(NewTexture(tf.dataDir + "/assets/ground.png"))
-	planeGeom := geometry.NewPlane(5, 1, 1, 1)
-	makePlaneWithMaterial := func(mat *material.Phong) *graphic.Mesh {
-		return graphic.NewMesh(planeGeom, mat)
-	}
-	mesh := makePlaneWithMaterial(groundMaterial)
+	groundMaterial.AddTexture(NewTexture(tf.dataDir + "/ground.png"))
+	planeGeom := geometry.NewPlane(5, 1, 5, 5)
+	mesh := graphic.NewMesh(planeGeom, groundMaterial)
+	mesh.SetRotation(-1.5708, 0, 0)
 	stg.scene.Add(mesh)
 	log.Debug("Added Plane Mesh!")
 	// Add light above the stage
@@ -70,8 +68,8 @@ func (stg *Stage) Update(timeDelta float64) {
 
 	for _, anim := range newToAnimate {
 		if !stg.resetAnim {
-			still_animating := anim.Update(timeDelta)
-			if still_animating {
+			stillAnimating := anim.Update(timeDelta)
+			if stillAnimating {
 				// copy to new slice
 				stg.toAnimate = append(stg.toAnimate, anim)
 			}

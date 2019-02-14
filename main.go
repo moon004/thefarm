@@ -10,9 +10,6 @@ import (
 
 	"github.com/g3n/engine/audio/al"
 	"github.com/g3n/engine/audio/vorbis"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/material"
 
 	"github.com/g3n/engine/audio"
 	"github.com/g3n/engine/camera"
@@ -20,6 +17,7 @@ import (
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/light"
+	"github.com/g3n/engine/loader/obj"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/renderer"
 	"github.com/g3n/engine/util/logger"
@@ -75,35 +73,6 @@ func (tf *TheFarm) Update(timeDelta float64) {
 	}
 }
 
-// CreateChar creates character and add it to the Scene
-// in g3n, Scene is actually *core.Node and adding
-// *core.Node is actually adding object to Scene
-func (tf *TheFarm) CreateChar(txName, name string) {
-	log.Debug("Creating Character")
-
-	geom := geometry.NewSphere(
-		float64(0.2),
-		2,
-		2,
-		float64(0),
-		float64(2),
-		float64(0),
-		float64(2),
-	)
-
-	// adding the texture to the shape
-	mat := material.NewPhong(math32.NewColor("White"))
-	mat.AddTexture(NewTexture(txName))
-	sphere := graphic.NewMesh(geom, mat)
-	sphere.SetName(name)
-	sphere.SetPosition(0, 0, 0)
-	tf.charNode = core.NewNode()
-	tf.charNode.Add(sphere)
-
-	log.Debug("New character CREATED!")
-
-}
-
 // onKey handles key R and key Enter
 func (tf *TheFarm) onKey(evname string, ev interface{}) {
 	kev := ev.(*window.KeyEvent) // return key events
@@ -136,9 +105,45 @@ func (tf *TheFarm) onCursor(evname string, ev interface{}) {
 	}
 }
 
+// CreateChar creates character and add it to the Scene
+// in g3n, Scene is actually *core.Node and adding
+// *core.Node is actually adding object to Scene
+func (tf *TheFarm) CreateChar(txName, name string) {
+	log.Debug("Creating Character")
+	//(rad, widthseg, heighseg, phist, philen, thetast, thetalen)
+	// geom := geometry.NewSphere(1, 10, 10, 0, 3, 0, 3)
+
+	// // adding the texture to the shape
+	// mat := material.NewPhong(math32.NewColor("White"))
+	// mat.AddTexture(NewTexture(txName))
+
+	// sphere := graphic.NewMesh(geom, mat)
+	// sphere.SetName(name)
+	// sphere.SetPosition(0, 0, 0)
+	// sphere.SetRotation(0, 0, 3.14159)
+
+	// tf.charNode = core.NewNode()
+	// tf.charNode.Add(sphere)
+	// tf.stageScene.Add(tf.charNode)
+
+	dec, err := obj.Decode(tf.dataDir+"/face/char.obj", tf.dataDir+"/face/char.mtl")
+	Errs(err)
+
+	char, err := dec.NewGroup()
+	Errs(err)
+
+	tf.charNode = core.NewNode()
+	tf.charNode.Add(char)
+	tf.stageScene.Add(tf.charNode)
+	log.Debug("New character CREATED!")
+
+}
+
 // LoadStage loads the stage and put inside tf.stage
 func (tf *TheFarm) LoadStage() {
 	log.Debug("Loading Stage")
+
+	// TODO load stage model from Blender
 
 	tf.stage = NewFarm(tf, tf.camera)
 	tf.stageScene.Add(tf.stage.scene)
@@ -183,7 +188,7 @@ func (tf *TheFarm) LoadAudio() {
 		return p
 	}
 
-	tf.musicPlayer = createPlayer(tf.dataDir + "/assets/BGM.ogg")
+	tf.musicPlayer = createPlayer(tf.dataDir + "/BGM.ogg")
 	tf.musicPlayer.SetLooping(true)
 }
 
@@ -224,7 +229,7 @@ func main() {
 	paths := strings.Split(rawPaths, ":")
 	for _, j := range paths {
 		// Checks data path
-		path := filepath.Join(j, "src", "github.com", "louis-project")
+		path := filepath.Join(j, "src", "github.com", "louis-project", "assets")
 		if _, err := os.Stat(path); err == nil {
 			tf.dataDir = path
 		}
@@ -322,7 +327,7 @@ func main() {
 		tf.LoadAudio()
 		tf.musicPlayer.Play()
 	}
-	tf.CreateChar(tf.dataDir+"/assets/t1.png", "sphere")
+	tf.CreateChar(tf.dataDir+"/face/f1.png", "sphere")
 	tf.LoadStage()
 
 	tf.win.Subscribe(window.OnCursor, tf.onCursor)
