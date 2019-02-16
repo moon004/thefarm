@@ -10,6 +10,9 @@ import (
 
 	"github.com/g3n/engine/audio/al"
 	"github.com/g3n/engine/audio/vorbis"
+	"github.com/g3n/engine/graphic"
+	"github.com/g3n/engine/loader/obj"
+	"github.com/g3n/engine/material"
 
 	"github.com/g3n/engine/audio"
 	"github.com/g3n/engine/camera"
@@ -17,7 +20,6 @@ import (
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/light"
-	"github.com/g3n/engine/loader/obj"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/renderer"
 	"github.com/g3n/engine/util/logger"
@@ -126,14 +128,18 @@ func (tf *TheFarm) CreateChar(txName, name string) {
 	// tf.charNode.Add(sphere)
 	// tf.stageScene.Add(tf.charNode)
 
-	dec, err := obj.Decode(tf.dataDir+"/face/char.obj", tf.dataDir+"/face/char.mtl")
+	dec, err := obj.Decode(tf.dataDir+"/face/char1.obj", tf.dataDir+"/face/char1.mtl")
 	Errs(err)
 
-	char, err := dec.NewGroup()
+	charGeom, err := dec.NewGeometry(dec.ObjCurrent)
 	Errs(err)
+
+	faceMaterial := material.NewPhong(math32.NewColor("humanskin"))
+	faceMaterial.AddTexture(NewTexture(tf.dataDir + "/face/f1.png"))
+	charMesh := graphic.NewMesh(charGeom, faceMaterial)
 
 	tf.charNode = core.NewNode()
-	tf.charNode.Add(char)
+	tf.charNode.Add(charMesh)
 	tf.stageScene.Add(tf.charNode)
 	log.Debug("New character CREATED!")
 
@@ -313,7 +319,7 @@ func main() {
 	tf.renderer.SetScene(tf.scene)
 
 	// Add white ambient light to the scene
-	ambLight := light.NewAmbient(&math32.Color{1.0, 1.0, 1.0}, 0.4)
+	ambLight := light.NewAmbient(&math32.Color{1.0, 1.0, 1.0}, 1)
 	tf.scene.Add(ambLight)
 
 	tf.RenderFrame()
@@ -325,7 +331,7 @@ func main() {
 	} else {
 		tf.audioAvailable = true
 		tf.LoadAudio()
-		tf.musicPlayer.Play()
+		// tf.musicPlayer.Play() // uncomment to play the music
 	}
 	tf.CreateChar(tf.dataDir+"/face/f1.png", "sphere")
 	tf.LoadStage()
