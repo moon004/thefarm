@@ -17,6 +17,10 @@ The Farm is the main parent object. It has the following vital things:
 
 **The character node, generated from input (facial pictures)**
 
+Need to call GLTF anim and use their Update method. In loadScene
+1. Remove Prevload
+2. Load the anims from .gltf json file, and fill GltfLoader.anim 
+
 ### Aim
 The stage contain, ground, livestocks, and trees and grasses import all from Blender.
 
