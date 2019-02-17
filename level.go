@@ -5,7 +5,6 @@ import (
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/texture"
@@ -38,10 +37,6 @@ func NewFarm(tf *TheFarm, cam *camera.Perspective) *Stage {
 	mesh.SetRotation(-1.5708, 0, 0)
 	stg.scene.Add(mesh)
 	log.Debug("Added Plane Mesh!")
-	// Add light above the stage
-	light := light.NewPoint(&math32.Color{1, 1, 1}, 8.0)
-	light.SetPosition(2, 1, 2)
-	stg.scene.Add(light)
 
 	return stg
 }

@@ -8,11 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/g3n/engine/animation"
 	"github.com/g3n/engine/audio/al"
 	"github.com/g3n/engine/audio/vorbis"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/loader/obj"
-	"github.com/g3n/engine/material"
 
 	"github.com/g3n/engine/audio"
 	"github.com/g3n/engine/camera"
@@ -38,6 +36,7 @@ type TheFarm struct {
 	scene        *core.Node
 	camera       *camera.Perspective
 	orbitControl *control.OrbitControl
+	anims        []*animation.Animation
 	dataDir      string
 
 	userData  *UserData
@@ -71,6 +70,7 @@ func (tf *TheFarm) ToggleFullScreen() {
 // Update updates the current stage if any
 func (tf *TheFarm) Update(timeDelta float64) {
 	if tf.stage != nil {
+		tf.Render(float32(timeDelta))
 		tf.stage.Update(timeDelta)
 	}
 }
@@ -110,42 +110,19 @@ func (tf *TheFarm) onCursor(evname string, ev interface{}) {
 // CreateChar creates character and add it to the Scene
 // in g3n, Scene is actually *core.Node and adding
 // *core.Node is actually adding object to Scene
-func (tf *TheFarm) CreateChar(txName, name string) {
+func (tf *TheFarm) CreateChar(fpath string) {
 	log.Debug("Creating Character")
-	//(rad, widthseg, heighseg, phist, philen, thetast, thetalen)
-	// geom := geometry.NewSphere(1, 10, 10, 0, 3, 0, 3)
-
-	// // adding the texture to the shape
-	// mat := material.NewPhong(math32.NewColor("White"))
-	// mat.AddTexture(NewTexture(txName))
-
-	// sphere := graphic.NewMesh(geom, mat)
-	// sphere.SetName(name)
-	// sphere.SetPosition(0, 0, 0)
-	// sphere.SetRotation(0, 0, 3.14159)
-
-	// tf.charNode = core.NewNode()
-	// tf.charNode.Add(sphere)
-	// tf.stageScene.Add(tf.charNode)
-
-	dec, err := obj.Decode(tf.dataDir+"/face/char1.obj", tf.dataDir+"/face/char1.mtl")
-	Errs(err)
-
-	charGeom, err := dec.NewGeometry(dec.ObjCurrent)
-	Errs(err)
-
-	faceMaterial := material.NewPhong(math32.NewColor("humanskin"))
-	faceMaterial.AddTexture(NewTexture(tf.dataDir + "/face/f1.png"))
-	charMesh := graphic.NewMesh(charGeom, faceMaterial)
 
 	tf.charNode = core.NewNode()
-	tf.charNode.Add(charMesh)
+
+	n := tf.loadScene(fpath)
+	tf.charNode.Add(n)
 	tf.stageScene.Add(tf.charNode)
 	log.Debug("New character CREATED!")
 
 }
 
-// LoadStage loads the stage and put inside tf.stage
+// LoadStage loads the stage and add to stageScene
 func (tf *TheFarm) LoadStage() {
 	log.Debug("Loading Stage")
 
@@ -155,6 +132,23 @@ func (tf *TheFarm) LoadStage() {
 	tf.stageScene.Add(tf.stage.scene)
 	// allow camera movement
 	tf.orbitControl.Enabled = true
+}
+
+// LeThereBeLight add light souce along all axes
+func (tf *TheFarm) LeThereBeLight() {
+	// light at z position
+	White := math32.NewColor("white")
+	light1 := light.NewAmbient(White, 0.5)
+	light1.SetPosition(0, 0, 10)
+	tf.scene.Add(light1)
+	// light at y position
+	light2 := light.NewAmbient(White, 0.5)
+	light2.SetPosition(0, 10, 0)
+	tf.scene.Add(light2)
+	// light at x position
+	light3 := light.NewAmbient(White, 0.5)
+	light3.SetPosition(10, 0, 0)
+	tf.scene.Add(light3)
 }
 
 // loadAudioLibs
@@ -319,8 +313,7 @@ func main() {
 	tf.renderer.SetScene(tf.scene)
 
 	// Add white ambient light to the scene
-	ambLight := light.NewAmbient(&math32.Color{1.0, 1.0, 1.0}, 1)
-	tf.scene.Add(ambLight)
+	tf.LeThereBeLight()
 
 	tf.RenderFrame()
 
@@ -333,7 +326,7 @@ func main() {
 		tf.LoadAudio()
 		// tf.musicPlayer.Play() // uncomment to play the music
 	}
-	tf.CreateChar(tf.dataDir+"/face/f1.png", "sphere")
+	tf.CreateChar(tf.dataDir + "/face/CesiumMan.gltf")
 	tf.LoadStage()
 
 	tf.win.Subscribe(window.OnCursor, tf.onCursor)
@@ -344,9 +337,9 @@ func main() {
 
 	// Start the render loop
 	for !tf.win.ShouldClose() {
-		newNow = time.Now()
+		now = time.Now()
 		timeDelta := now.Sub(newNow)
-		now = newNow
+		newNow = now
 
 		tf.Update(timeDelta.Seconds())
 		tf.RenderFrame()
