@@ -326,7 +326,7 @@ func main() {
 		tf.LoadAudio()
 		// tf.musicPlayer.Play() // uncomment to play the music
 	}
-	tf.CreateChar(tf.dataDir + "/face/CesiumMan.gltf")
+	tf.CreateChar(tf.dataDir + "/newface/Son.gltf")
 	tf.LoadStage()
 
 	tf.win.Subscribe(window.OnCursor, tf.onCursor)

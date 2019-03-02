@@ -17,14 +17,6 @@ type GltfLoader struct {
 	anims      []*animation.Animation
 }
 
-// Initialize to init gltf loader
-func (tf *TheFarm) Initialize() {
-
-	//fpath := "gltf/DamagedHelmet/glTF/DamagedHelmet.gltf"
-	fpath := "CesiumMan.gltf"
-	tf.loadScene(filepath.Join(tf.dataDir, fpath))
-}
-
 // Render is to update gltf animation
 func (tf *TheFarm) Render(delta float32) {
 
@@ -46,7 +38,6 @@ func (tf *TheFarm) loadScene(fpath string) core.INode {
 	// Parses file
 	if ext == ".gltf" {
 		g, err = gltf.ParseJSON(fpath)
-		g.Images[0].Uri = "CesiumMan1.jpg"
 	} else if ext == ".glb" {
 		g, err = gltf.ParseBin(fpath)
 	} else {
