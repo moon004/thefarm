@@ -1,13 +1,13 @@
 package main
 
 import (
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/g3n/engine/camera"
 	"github.com/g3n/engine/core"
-	"github.com/g3n/engine/geometry"
-	"github.com/g3n/engine/graphic"
-	"github.com/g3n/engine/material"
-	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/texture"
+	"github.com/pkg/errors"
 )
 
 // Stage struct
@@ -22,7 +22,27 @@ type Stage struct {
 }
 
 // NewFarm Creates new stage for it
-func NewFarm(tf *TheFarm, cam *camera.Perspective) *Stage {
+// func NewFarm(tf *TheFarm, cam *camera.Perspective) *Stage {
+// 	stg := new(Stage)
+// 	stg.farm = tf
+// 	stg.camera = cam
+
+// 	stg.scene = core.NewNode()
+// 	stg.scene.SetPosition(0, 0, 0)
+// 	// Make Plane
+// 	groundMaterial := material.NewPhong(math32.NewColor("Brown"))
+// 	groundMaterial.AddTexture(NewTexture(tf.dataDir + "/ground.png"))
+// 	planeGeom := geometry.NewPlane(5, 1, 5, 5)
+// 	mesh := graphic.NewMesh(planeGeom, groundMaterial)
+// 	mesh.SetRotation(-1.5708, 0, 0)
+// 	stg.scene.Add(mesh)
+// 	log.Debug("Added Plane Mesh!")
+
+// 	return stg
+// }
+
+// NewStage returns a loaded *Stage (pointer to stage)
+func NewStage(tf *TheFarm, cam *camera.Perspective) *Stage {
 	stg := new(Stage)
 	stg.farm = tf
 	stg.camera = cam
@@ -30,13 +50,23 @@ func NewFarm(tf *TheFarm, cam *camera.Perspective) *Stage {
 	stg.scene = core.NewNode()
 	stg.scene.SetPosition(0, 0, 0)
 	// Make Plane
-	groundMaterial := material.NewPhong(math32.NewColor("Brown"))
-	groundMaterial.AddTexture(NewTexture(tf.dataDir + "/ground.png"))
-	planeGeom := geometry.NewPlane(5, 1, 5, 5)
-	mesh := graphic.NewMesh(planeGeom, groundMaterial)
-	mesh.SetRotation(-1.5708, 0, 0)
-	stg.scene.Add(mesh)
-	log.Debug("Added Plane Mesh!")
+
+	// Load Stage no need faceID
+	files, err := ioutil.ReadDir(tf.stageDir)
+	Errs(errors.WithStack(err))
+
+	for _, f := range files {
+		//Get File extension, if gltf, add it to scene
+		ext := filepath.Ext(f.Name())
+
+		if ext == ".gltf" {
+			node := tf.loadScene(filepath.Join(tf.stageDir, f.Name()), "")
+			stg.scene.Add(node)
+		}
+	}
+	// node := tf.loadScene(tf.stageDir, "")
+	// stg.scene.Add(node)
+	log.Debug("Added Stage Farm!")
 
 	return stg
 }

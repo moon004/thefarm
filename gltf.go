@@ -2,6 +2,7 @@ package main
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/g3n/engine/core"
 
@@ -25,7 +26,7 @@ func (tf *TheFarm) Render(delta float32) {
 	}
 }
 
-func (tf *TheFarm) loadScene(fpath string) core.INode {
+func (tf *TheFarm) loadScene(fpath, faceID string) core.INode {
 
 	// TODO move camera or scale scene such that it's nicely framed
 	// TODO do this for other loaders as well
@@ -34,10 +35,22 @@ func (tf *TheFarm) loadScene(fpath string) core.INode {
 	ext := filepath.Ext(fpath)
 	var g *gltf.GLTF
 	var err error
+	// Parse the fpath directory
+	item := strings.Split(fpath, "/")
+	// Pick second last for item load type and last for faces
+	itemToLoad := item[len(item)-2]
 
 	// Parses file
 	if ext == ".gltf" {
 		g, err = gltf.ParseJSON(fpath)
+		// REMEMBER ADD user facial picture HERE!!!!
+		// g.Images[0].Uri = "CesiumMan1.jpg"
+		switch itemToLoad {
+		case "face":
+			g.Images[0].Uri = filepath.Join(tf.faceDir, faceID)
+		default: // Other than "character"
+			log.Debug("Default case means to load stage")
+		}
 	} else if ext == ".glb" {
 		g, err = gltf.ParseBin(fpath)
 	} else {

@@ -16,8 +16,6 @@ const USER_DATA_FILENAME string = "/user.data"
 type UserData struct {
 	MusicOn    bool
 	SfxOn      bool
-	MusicVol   float32
-	SfxVol     float32
 	FullScreen bool
 }
 
@@ -41,8 +39,6 @@ func NewUserData(dataDir string) *UserData {
 	if err != nil {
 		ud.SfxOn = true
 		ud.MusicOn = true
-		ud.SfxVol = 0.5
-		ud.MusicVol = 0.5
 		ud.FullScreen = false
 		log.Debug("Creating new user data with default values: %+v", ud)
 	} else {

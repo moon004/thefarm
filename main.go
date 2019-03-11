@@ -11,13 +11,13 @@ import (
 	"github.com/g3n/engine/animation"
 	"github.com/g3n/engine/audio/al"
 	"github.com/g3n/engine/audio/vorbis"
+	"github.com/g3n/engine/light"
 
 	"github.com/g3n/engine/audio"
 	"github.com/g3n/engine/camera"
 	"github.com/g3n/engine/camera/control"
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/gls"
-	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/renderer"
 	"github.com/g3n/engine/util/logger"
@@ -38,12 +38,16 @@ type TheFarm struct {
 	orbitControl *control.OrbitControl
 	anims        []*animation.Animation
 	dataDir      string
+	faceDir      string
+	stageDir     string
+	charDir      string
 
 	userData  *UserData
 	stepDelta *math32.Vector2
 
 	stageScene     *core.Node
 	stage          *Stage
+	animal         *core.Node
 	charNode       *core.Node
 	audioAvailable bool
 
@@ -110,12 +114,12 @@ func (tf *TheFarm) onCursor(evname string, ev interface{}) {
 // CreateChar creates character and add it to the Scene
 // in g3n, Scene is actually *core.Node and adding
 // *core.Node is actually adding object to Scene
-func (tf *TheFarm) CreateChar(fpath string) {
+func (tf *TheFarm) CreateChar(fpath, faceID string) {
 	log.Debug("Creating Character")
 
 	tf.charNode = core.NewNode()
 
-	n := tf.loadScene(fpath)
+	n := tf.loadScene(fpath, faceID) // Get the Node
 	tf.charNode.Add(n)
 	tf.stageScene.Add(tf.charNode)
 	log.Debug("New character CREATED!")
@@ -128,7 +132,7 @@ func (tf *TheFarm) LoadStage() {
 
 	// TODO load stage model from Blender
 
-	tf.stage = NewFarm(tf, tf.camera)
+	tf.stage = NewStage(tf, tf.camera)
 	tf.stageScene.Add(tf.stage.scene)
 	// allow camera movement
 	tf.orbitControl.Enabled = true
@@ -136,19 +140,22 @@ func (tf *TheFarm) LoadStage() {
 
 // LeThereBeLight add light souce along all axes
 func (tf *TheFarm) LeThereBeLight() {
-	// light at z position
 	White := math32.NewColor("white")
-	light1 := light.NewAmbient(White, 0.5)
+	// light at z position
+	light1 := light.NewDirectional(White, 0.5)
 	light1.SetPosition(0, 0, 10)
 	tf.scene.Add(light1)
 	// light at y position
-	light2 := light.NewAmbient(White, 0.5)
+	light2 := light.NewDirectional(White, 1.0)
 	light2.SetPosition(0, 10, 0)
 	tf.scene.Add(light2)
 	// light at x position
-	light3 := light.NewAmbient(White, 0.5)
+	light3 := light.NewDirectional(White, 0.5)
 	light3.SetPosition(10, 0, 0)
 	tf.scene.Add(light3)
+	// Add ambient light
+	lightAmbi := light.NewAmbient(White, 0.5)
+	tf.scene.Add(lightAmbi)
 }
 
 // loadAudioLibs
@@ -232,6 +239,9 @@ func main() {
 		path := filepath.Join(j, "src", "github.com", "louis-project", "assets")
 		if _, err := os.Stat(path); err == nil {
 			tf.dataDir = path
+			tf.faceDir = filepath.Join(path, "character/face")
+			tf.stageDir = filepath.Join(path, "stage")
+			tf.charDir = filepath.Join(path, "character")
 		}
 	}
 
@@ -239,8 +249,6 @@ func main() {
 	// userData {
 	// MusicOn    bool
 	// SfxOn      bool
-	// MusicVol   float32
-	// SfxVol     float32
 	// FullScreen bool
 	// }
 	tf.userData = NewUserData(tf.dataDir)
@@ -277,6 +285,8 @@ func main() {
 		width, height := tf.win.Size()
 		tf.gs.Viewport(0, 0, int32(width), int32(height))
 		aspect := float32(width) / float32(height)
+		tf.camera.SetPosition(0, 0, 5)
+		tf.camera.LookAt(&math32.Vector3{0, 0, 0})
 		tf.camera.SetAspect(aspect)
 	})
 
@@ -326,7 +336,7 @@ func main() {
 		tf.LoadAudio()
 		// tf.musicPlayer.Play() // uncomment to play the music
 	}
-	tf.CreateChar(tf.dataDir + "/newface/Son.gltf")
+	tf.CreateChar(tf.charDir+"/Son.gltf", "1.png")
 	tf.LoadStage()
 
 	tf.win.Subscribe(window.OnCursor, tf.onCursor)
@@ -344,6 +354,8 @@ func main() {
 		tf.Update(timeDelta.Seconds())
 		tf.RenderFrame()
 	}
+
+	tf.userData.Save(tf.dataDir)
 }
 
 // RenderFrame renders a frame of the scene with the GUI overlaid
