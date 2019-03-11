@@ -22,7 +22,7 @@ Need to call GLTF anim and use their Update method. In loadScene
 2. Load the anims from .gltf json file, and fill GltfLoader.anim 
 
 TODO:
-1. Character translate, animate and generate properly.
+1. Character animate and generate properly.
   - Have separate body and head texture
   - Head and body remain same
   - Differences are Hair, body colour that determine Father, mom, son daughter.
@@ -32,9 +32,13 @@ TODO:
   - I'll have to collage image of shirt pattern with facial image.
   - Use that collaged image as one material for 1 model.
   - Each character has own 1 .gltf and 1 picture (material)
-  - So **Generate character by using right combination of .gltf and picture**
+  - So **Generate character by using right combination of .gltf and picture(example: gombine father.png facial1.png -out /face/user1.png)**
+  Reminder: the gltf is correspond to user facial picture (change to user facial pic name at gltf.go ***around line 41***)
 2. Model the stage.
-3. Insert Skybox.
+3. Translate characters
+4. Gombine Picture, and generate characters properly
+5. Insert Skybox. (Blue Sky)
+6. Add character selection features.
 
 ### Aim
 The stage contain, ground, livestocks, and trees and grasses import all from Blender as one decoder.
