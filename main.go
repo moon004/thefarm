@@ -75,7 +75,6 @@ func (tf *TheFarm) ToggleFullScreen() {
 func (tf *TheFarm) Update(timeDelta float64) {
 	if tf.stage != nil {
 		tf.Render(float32(timeDelta))
-		tf.stage.Update(timeDelta)
 	}
 }
 
@@ -123,6 +122,7 @@ func (tf *TheFarm) CreateChar(fpath, faceID string) {
 	tf.charNode.Add(n)
 	tf.stageScene.Add(tf.charNode)
 	log.Debug("New character CREATED!")
+	TranslateChar(tf.charNode)
 
 }
 
@@ -336,8 +336,9 @@ func main() {
 		tf.LoadAudio()
 		// tf.musicPlayer.Play() // uncomment to play the music
 	}
-	tf.CreateChar(tf.charDir+"/Son.gltf", "1.png")
 	tf.LoadStage()
+	tf.CreateChar(tf.charDir+"/Son.gltf", "1.jpg")
+	// tf.CreateChar(tf.charDir+"/Father.gltf", "1.png")
 
 	tf.win.Subscribe(window.OnCursor, tf.onCursor)
 

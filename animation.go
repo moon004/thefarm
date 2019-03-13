@@ -23,7 +23,7 @@ func NewAnimation(node *core.Node, dest *math32.Vector3, cb func(interface{}), c
 	a := new(Animation)
 	a.node = node
 	a.dest = dest
-	a.speed = 10
+	a.speed = 1
 	a.callback = cb
 	a.cb_arg = cb_arg
 	return a
@@ -48,4 +48,9 @@ func (a *Animation) Update(timeDelta float64) bool {
 		}
 		return false
 	}
+}
+
+func TranslateChar(char *core.Node) {
+	char.TranslateX(2)
+	char.TranslateY(5)
 }

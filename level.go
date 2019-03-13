@@ -60,7 +60,8 @@ func NewStage(tf *TheFarm, cam *camera.Perspective) *Stage {
 		ext := filepath.Ext(f.Name())
 
 		if ext == ".gltf" {
-			node := tf.loadScene(filepath.Join(tf.stageDir, f.Name()), "")
+			file := filepath.Join(tf.stageDir, f.Name())
+			node := tf.loadScene(file, "")
 			stg.scene.Add(node)
 		}
 	}

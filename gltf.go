@@ -30,6 +30,7 @@ func (tf *TheFarm) loadScene(fpath, faceID string) core.INode {
 
 	// TODO move camera or scale scene such that it's nicely framed
 	// TODO do this for other loaders as well
+	log.Debug("Add GLTF item: ", fpath, faceID)
 
 	// Checks file extension
 	ext := filepath.Ext(fpath)
@@ -39,15 +40,15 @@ func (tf *TheFarm) loadScene(fpath, faceID string) core.INode {
 	item := strings.Split(fpath, "/")
 	// Pick second last for item load type and last for faces
 	itemToLoad := item[len(item)-2]
-
+	log.Debug("ItemToLoad", itemToLoad)
 	// Parses file
 	if ext == ".gltf" {
 		g, err = gltf.ParseJSON(fpath)
 		// REMEMBER ADD user facial picture HERE!!!!
 		// g.Images[0].Uri = "CesiumMan1.jpg"
 		switch itemToLoad {
-		case "face":
-			g.Images[0].Uri = filepath.Join(tf.faceDir, faceID)
+		case "character":
+			g.Images[0].Uri = "face/1.jpg"
 		default: // Other than "character"
 			log.Debug("Default case means to load stage")
 		}
