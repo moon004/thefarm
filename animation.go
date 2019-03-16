@@ -5,6 +5,10 @@
 package main
 
 import (
+	"fmt"
+	"math/rand"
+	"time"
+
 	"github.com/g3n/engine/core"
 	"github.com/g3n/engine/math32"
 )
@@ -51,6 +55,11 @@ func (a *Animation) Update(timeDelta float64) bool {
 }
 
 func TranslateChar(char *core.Node) {
-	char.TranslateX(2)
-	char.TranslateY(5)
+	forRandSeed := time.Now().UnixNano()
+	log.Debug(fmt.Sprintf("forRandSeed: %v\n", forRandSeed))
+
+	rand.Seed(forRandSeed)
+
+	char.TranslateX(rand.Float32() * 2)
+	char.TranslateY(rand.Float32() * 2)
 }

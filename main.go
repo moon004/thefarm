@@ -47,8 +47,7 @@ type TheFarm struct {
 
 	stageScene     *core.Node
 	stage          *Stage
-	animal         *core.Node
-	charNode       *core.Node
+	allChar        []*TheChar
 	audioAvailable bool
 
 	//Sound and Sfx
@@ -59,9 +58,7 @@ type TheFarm struct {
 // ResetFarm clears all the characters.
 func (tf *TheFarm) ResetFarm() {
 	log.Debug("Reset Farm")
-
-	tf.charNode = nil
-
+	tf.allChar = nil
 }
 
 // ToggleFullScreen toggles whether is game is fullscreen or windowed
@@ -73,8 +70,10 @@ func (tf *TheFarm) ToggleFullScreen() {
 
 // Update updates the current stage if any
 func (tf *TheFarm) Update(timeDelta float64) {
+
 	if tf.stage != nil {
 		tf.Render(float32(timeDelta))
+		tf.MoveChar()
 	}
 }
 
@@ -84,6 +83,12 @@ func (tf *TheFarm) onKey(evname string, ev interface{}) {
 	switch kev.Keycode {
 	case window.KeyR:
 		tf.ToggleFullScreen()
+	case window.KeyX:
+		tf.translateChar(tf.allChar[0])
+	case window.KeyY:
+		tf.translateChar(tf.allChar[0])
+	case window.KeyZ:
+		tf.translateChar(tf.allChar[0])
 	case window.KeyEnter:
 		tf.ResetFarm()
 	}
@@ -116,13 +121,10 @@ func (tf *TheFarm) onCursor(evname string, ev interface{}) {
 func (tf *TheFarm) CreateChar(fpath, faceID string) {
 	log.Debug("Creating Character")
 
-	tf.charNode = core.NewNode()
-
-	n := tf.loadScene(fpath, faceID) // Get the Node
-	tf.charNode.Add(n)
-	tf.stageScene.Add(tf.charNode)
+	newchar := tf.GenerateNewChar(fpath, faceID)
+	tf.allChar = append(tf.allChar, newchar)
+	tf.stageScene.Add(newchar.CN)
 	log.Debug("New character CREATED!")
-	TranslateChar(tf.charNode)
 
 }
 
