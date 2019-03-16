@@ -34,8 +34,13 @@ TODO:
   - Each character has own 1 .gltf and 1 picture (material)
   - So **Generate character by using right combination of .gltf and picture(example: gombine father.png facial1.png -out /face/user1.png)**
   Reminder: the gltf is correspond to user facial picture (change to user facial pic name at gltf.go ***around line 41***)
-2. Model the stage.
+2. Model the stage. (Done)
+
 3. Translate characters
+  - Each Character must hv own node, hence, slice of tf.charNode is created
+  - Each node is then assign random dest, once reach there, assign a new random dest
+  - Y kept at 0, X and Z are treated as separated components to make translation easier.
+
 4. Gombine Picture, and generate characters properly
 5. Insert Skybox. (Blue Sky)
 6. Add character selection features.
