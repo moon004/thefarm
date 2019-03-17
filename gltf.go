@@ -87,16 +87,7 @@ func (tf *TheFarm) translateChar(C *TheChar) {
 	quad := DetectQuad(distZ, distX)
 	CurrentRot := C.CN.Rotation()
 	if CurrentRot.Y != rad {
-		switch quad {
-		case 1:
-			C.CN.SetRotationY(rad)
-		case 2:
-			C.CN.SetRotationY(rad)
-		case 3:
-			C.CN.SetRotationY(rad)
-		case 4:
-			C.CN.SetRotationY(rad)
-		}
+		C.CN.SetRotationY(rad)
 
 	}
 	log.Debug("\nCurrentPos: %v, CurrentDes: %v, Radian: %v, CRotation: %v, DetectQuad: %v",
