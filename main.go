@@ -37,6 +37,7 @@ type TheFarm struct {
 	camera       *camera.Perspective
 	orbitControl *control.OrbitControl
 	anims        []*animation.Animation
+	addChar      bool
 	dataDir      string
 	faceDir      string
 	stageDir     string
@@ -156,7 +157,7 @@ func (tf *TheFarm) LeThereBeLight() {
 	light3.SetPosition(10, 0, 0)
 	tf.scene.Add(light3)
 	// Add ambient light
-	lightAmbi := light.NewAmbient(White, 0.5)
+	lightAmbi := light.NewAmbient(White, 0.9)
 	tf.scene.Add(lightAmbi)
 }
 
@@ -339,6 +340,8 @@ func main() {
 		// tf.musicPlayer.Play() // uncomment to play the music
 	}
 	tf.LoadStage()
+	tf.ProcessedAndSave()
+
 	tf.CreateChar(tf.charDir+"/Son.gltf", "1.jpg")
 	// tf.CreateChar(tf.charDir+"/Father.gltf", "1.png")
 

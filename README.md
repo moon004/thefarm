@@ -36,17 +36,21 @@ TODO:
   Reminder: the gltf is correspond to user facial picture (change to user facial pic name at gltf.go ***around line 41***)
 2. Model the stage. (Done)
 
-3. Translate characters
+3. Translate characters (done)
   - Each Character must hv own node, hence, slice of tf.charNode is created
   - Each node is then assign random dest, once reach there, assign a new random dest
   - Y kept at 0, X and Z are treated as separated components to make translation easier.
+  - Rotate based on Inverse Tangent (math32.Atan2())
 
 4. Gombine Picture, and generate characters properly
+  - Use gocv, use AI (SSD facedetect) to get the face rectangle and crop it and straight away gombine with the selected model.
+  - Save the resulted file (image) in a specific folder.
+  
 5. Insert Skybox. (Blue Sky)
 6. Add character selection features.
 
 ### Aim
-The stage contain, ground, livestocks, and trees and grasses import all from Blender as one decoder.
+The stage contain, ground, livestocks, and trees and grasses import all from Blender.
 
 Generate the character according to the choice of user, got 4 options:
 
