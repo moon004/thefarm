@@ -9,10 +9,12 @@ import (
 )
 
 // Errs handles the error for TheFarm
-func Errs(err error) {
+func Errs(msg string, err error) {
 	if err != nil {
 		red := color.New(color.FgRed).SprintFunc()
-		logs.Fatalf(fmt.Sprintf("%s %v", red("error:"), err))
+		yellow := color.New(color.FgCyan).SprintFunc()
+		logs.Fatalf(fmt.Sprintf("%s %s %s %v",
+			yellow("Message:"), msg, red("Error:"), err))
 		os.Exit(1) // exit with error code 1
 	}
 }

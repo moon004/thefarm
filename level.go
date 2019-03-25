@@ -53,7 +53,7 @@ func NewStage(tf *TheFarm, cam *camera.Perspective) *Stage {
 
 	// Load Stage no need faceID
 	files, err := ioutil.ReadDir(tf.stageDir)
-	Errs(errors.WithStack(err))
+	Errs("Error reading stageDir", errors.WithStack(err))
 
 	for _, f := range files {
 		//Get File extension, if gltf, add it to scene

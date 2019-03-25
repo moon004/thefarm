@@ -181,9 +181,9 @@ func (tf *TheFarm) loadScene(fpath, faceID string) core.INode {
 	} else if ext == ".glb" {
 		g, err = gltf.ParseBin(fpath)
 	} else {
-		Errs(errors.Errorf("Uknown file extension:%s", ext))
+		Errs("Uknown file extension", errors.Errorf("%s", ext))
 	}
-	Errs(err)
+	Errs("Error parsing gltf", err)
 
 	defaultSceneIdx := 0
 	if g.Scene != nil {
@@ -192,7 +192,7 @@ func (tf *TheFarm) loadScene(fpath, faceID string) core.INode {
 
 	// Create default scene
 	n, err := g.LoadScene(defaultSceneIdx)
-	Errs(err)
+	Errs("error loading default scene", err)
 
 	// Create animations
 	for i := range g.Animations {

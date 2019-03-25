@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -22,7 +23,6 @@ import (
 	"github.com/g3n/engine/renderer"
 	"github.com/g3n/engine/util/logger"
 	"github.com/g3n/engine/window"
-	"github.com/pkg/errors"
 )
 
 var log *logger.Logger
@@ -166,15 +166,15 @@ func loadAudioLibs() error {
 
 	// Open default audio device
 	dev, err := al.OpenDevice("")
-	Errs(errors.Wrap(err, "Error opening OpenAL default device"))
+	Errs("Error opening OpenAL default device", err)
 
 	// Create audio context
 	acx, err := al.CreateContext(dev, nil)
-	Errs(errors.Wrap(err, "Error creating audio context"))
+	Errs("Error creating audio context", err)
 
 	// Make the context the current one
 	err = al.MakeContextCurrent(acx)
-	Errs(errors.Wrap(err, "Error setting audio context current"))
+	Errs("Error setting audio context current", err)
 	log.Debug("%s version: %s", al.GetString(al.Vendor), al.GetString(al.Version))
 	log.Debug("%s", vorbis.VersionString())
 	return nil
@@ -194,7 +194,7 @@ func (tf *TheFarm) LoadAudio() {
 	createPlayer := func(fname string) *audio.Player {
 		log.Debug("Loading " + fname)
 		p, err := audio.NewPlayer(fname)
-		Errs(errors.Wrapf(err, "Failed to create player for: %v", fname))
+		Errs(fmt.Sprintf("Failed to create player for: %v", fname), err)
 		return p
 	}
 
@@ -259,15 +259,15 @@ func main() {
 	// Get the window manager
 	var err error
 	tf.wmgr, err = window.Manager("glfw")
-	Errs(err)
+	Errs("Error getting glfw window manager", err)
 
 	// Create window and OpenGL context
 	tf.win, err = tf.wmgr.CreateWindow(1200, 900, "Farm", tf.userData.FullScreen)
-	Errs(err)
+	Errs("Error getting window and OpenGL context", err)
 
 	// Create OpenGL state
 	tf.gs, err = gls.New()
-	Errs(err)
+	Errs("Error creating OpenGL state", err)
 
 	// Speed up a bit by not checking OpenGL errors
 	tf.gs.SetCheckErrors(false)
@@ -300,7 +300,7 @@ func main() {
 	tf.renderer = renderer.NewRenderer(tf.gs)
 	//tf.renderer.SetSortObjects(false)
 	err = tf.renderer.AddDefaultShaders()
-	Errs(err)
+	Errs("Error adding default shader", err)
 
 	// Adds a perspective camera to the scene
 	// The camera aspect ratio should be updated if the window is resized.
@@ -333,7 +333,7 @@ func main() {
 	// Try to open audio libraries
 	err = loadAudioLibs()
 	if err != nil {
-		Errs(err)
+		Errs("Error loading audio library", err)
 	} else {
 		tf.audioAvailable = true
 		tf.LoadAudio()
@@ -369,7 +369,7 @@ func (tf *TheFarm) RenderFrame() {
 
 	// Render the scene/gui using the specified camera
 	rendered, err := tf.renderer.Render(tf.camera)
-	Errs(err)
+	Errs("Error rendering frame", err)
 
 	// Check I/O events
 	tf.wmgr.PollEvents()
