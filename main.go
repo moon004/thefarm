@@ -119,12 +119,23 @@ func (tf *TheFarm) onCursor(evname string, ev interface{}) {
 // CreateChar creates character and add it to the Scene
 // in g3n, Scene is actually *core.Node and adding
 // *core.Node is actually adding object to Scene
-func (tf *TheFarm) CreateChar(fpath, faceID string) {
+func (tf *TheFarm) CreateChar(modelPath, faceID string) {
 	log.Debug("Creating Character")
 
-	newchar := tf.GenerateNewChar(fpath, faceID)
+	newchar := tf.GenerateNewChar(modelPath, faceID)
+	newchar.CN.SetName(faceID)
 	tf.allChar = append(tf.allChar, newchar)
 	tf.stageScene.Add(newchar.CN)
+
+	childrenSlice := tf.stageScene.Children()
+
+	maxCharLimit := 11
+	if len(childrenSlice) > maxCharLimit {
+		tf.stageScene.RemoveAt(1)
+	}
+
+	// All whole stage is 1 node
+	// Every char has own node
 	log.Debug("New character CREATED!")
 
 }
@@ -136,6 +147,7 @@ func (tf *TheFarm) LoadStage() {
 	// TODO load stage model from Blender
 
 	tf.stage = NewStage(tf, tf.camera)
+	tf.stage.scene.SetName("Stage Node")
 	tf.stageScene.Add(tf.stage.scene)
 	// allow camera movement
 	tf.orbitControl.Enabled = true
@@ -340,9 +352,11 @@ func main() {
 		// tf.musicPlayer.Play() // uncomment to play the music
 	}
 	tf.LoadStage()
-	tf.ProcessedAndSave()
+	go tf.AICam(0,
+		"assets/data/deploy.prototxt",
+		"assets/data/res10300x300ssd140000.caffemodel")
 
-	tf.CreateChar(tf.charDir+"/Son.gltf", "1.jpg")
+	tf.CreateChar(tf.charDir+"/Son.gltf", "/12:25:58.jpg")
 	// tf.CreateChar(tf.charDir+"/Father.gltf", "1.png")
 
 	tf.win.Subscribe(window.OnCursor, tf.onCursor)

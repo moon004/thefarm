@@ -32,10 +32,10 @@ type TheChar struct {
 
 // GenerateNewChar will return a new pointer to TheChar
 // with the face input
-func (tf *TheFarm) GenerateNewChar(fpath, faceID string) *TheChar {
+func (tf *TheFarm) GenerateNewChar(modelPath, faceID string) *TheChar {
 	newchar := new(TheChar)
 	newchar.CN = core.NewNode()
-	n := tf.loadScene(fpath, faceID)
+	n := tf.loadScene(modelPath, faceID)
 	newchar.CN.Add(n)
 	newchar.CO = math32.NewVec3() // assign the origin to be 0,0,0
 	newchar.CD = tf.randCoord()
@@ -88,8 +88,8 @@ func (tf *TheFarm) translateChar(C *TheChar) {
 		C.CN.SetRotationY(rad)
 	}
 
-	log.Debug("\nCurrentPos: %v, CurrentDes: %v, Radian: %v, CRotation: %v",
-		C.CN.Position(), C.CD, rad, CurrentRot)
+	// log.Debug("\nCurrentPos: %v, CurrentDes: %v, Radian: %v, CRotation: %v",
+	// 	C.CN.Position(), C.CD, rad, CurrentRot)
 }
 
 func Min(x, y float32) float32 {
@@ -151,35 +151,35 @@ func (tf *TheFarm) randCoord() *math32.Vector3 {
 	return math32.NewVector3(x, y, z)
 }
 
-func (tf *TheFarm) loadScene(fpath, faceID string) core.INode {
+func (tf *TheFarm) loadScene(modelPath, faceID string) core.INode {
 
 	// TODO move camera or scale scene such that it's nicely framed
 	// TODO do this for other loaders as well
-	log.Debug("Add GLTF item: %s %s", fpath, faceID)
+	log.Debug("Add GLTF item: %s %s", modelPath, faceID)
 
 	// Checks file extension
-	ext := filepath.Ext(fpath)
+	ext := filepath.Ext(modelPath)
 	var g *gltf.GLTF
 	var err error
-	// Parse the fpath directory
-	item := strings.Split(fpath, "/")
+	// Parse the modelPath directory
+	item := strings.Split(modelPath, "/")
 	// Pick second last for item load type and last for faces
 	itemToLoad := item[len(item)-2]
 	log.Debug("ItemToLoad: %v", itemToLoad)
 
 	// Parses file
 	if ext == ".gltf" {
-		g, err = gltf.ParseJSON(fpath)
+		g, err = gltf.ParseJSON(modelPath)
 		// REMEMBER ADD user facial picture HERE!!!!
-		// g.Images[0].Uri = "CesiumMan1.jpg"
 		switch itemToLoad {
 		case "character":
-			g.Images[0].Uri = "face/1.jpg"
+			// faceID is the image of model + face picture
+			g.Images[0].Uri = "face/" + filepath.Base(faceID)
 		default: // Other than "character"
 			log.Debug("Default case means to load stage")
 		}
 	} else if ext == ".glb" {
-		g, err = gltf.ParseBin(fpath)
+		g, err = gltf.ParseBin(modelPath)
 	} else {
 		Errs("Uknown file extension", errors.Errorf("%s", ext))
 	}

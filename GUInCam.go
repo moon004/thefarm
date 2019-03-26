@@ -21,53 +21,9 @@ import (
 
 var modelSelector string
 
-// ProcessedAndSave will gombine and save
-// them in tf.faceDir
-func (tf *TheFarm) ProcessedAndSave() {
-	fileFace, err := tf.AICam(0,
-		"assets/data/ssd_model/deploy.prototxt",
-		"assets/data/ssd_model/res10_300x300_ssd_iter_140000_fp16.caffemodel")
-	Errs("Error processing AICam", err)
-
-	// Here MODEL SELECTION and GOMBINE will occur.
-	var fmodel string
-
-	switch modelSelector {
-	case "Son":
-		fmodel = filepath.Join(tf.charDir, "Son.png")
-	case "Father":
-		fmodel = filepath.Join(tf.charDir, "Father.png")
-	case "Mother":
-		fmodel = filepath.Join(tf.charDir, "Mother.png")
-	case "Daughter":
-		fmodel = filepath.Join(tf.charDir, "Mother.png")
-	}
-
-	images := []*gombine.ImageData{}
-	imdModel := ImageDataGetter(fmodel)
-	imdFace := ImageDataGetter(fileFace)
-	images = append(images, &imdModel, &imdFace)
-	gombine.ProcessImages(images, "jpg", "bottom", fileFace)
-}
-
-// ImageDataGetter returns image data from the provided file
-func ImageDataGetter(file string) gombine.ImageData {
-	fimg, err := os.Open(file)
-	Errs("Error opening file for gombine", err)
-	defer fimg.Close()
-
-	img, err := jpeg.Decode(fimg)
-	Errs("Error decoding jpeg while in ImageDataGetter", err)
-
-	imd, err := gombine.GetImageData(&img, file)
-	Errs("Error getting Image Data", err)
-
-	return imd
-}
-
 // AICam is the boilerplate for ssd-facedetection and also returns
 // the cropped image.
-func (tf *TheFarm) AICam(deviceID int, proto, model string) (string, error) {
+func (tf *TheFarm) AICam(deviceID int, proto, model string) {
 	// start The Farm Gui
 	go gimain.Main(func() {
 		TheFarmGui()
@@ -75,11 +31,8 @@ func (tf *TheFarm) AICam(deviceID int, proto, model string) (string, error) {
 
 	// open capture device
 	webcam, err := gocv.OpenVideoCapture(deviceID)
-	if err != nil {
-		return "",
-			errors.Wrapf(err, "Error opening video capture device: %v\n",
-				deviceID)
-	}
+	Errs(fmt.Sprintf("Error opening video capture device: %v\n",
+		deviceID), err)
 
 	defer webcam.Close()
 
@@ -96,7 +49,7 @@ func (tf *TheFarm) AICam(deviceID int, proto, model string) (string, error) {
 
 	window := gocv.NewWindow("The Farm")
 
-	green := color.RGBA{0, 255, 0, 0}
+	color := color.RGBA{234, 192, 134, 0}
 	fmt.Printf("Start reading device: %v\n", deviceID)
 
 	// FarmGui()
@@ -106,7 +59,7 @@ func (tf *TheFarm) AICam(deviceID int, proto, model string) (string, error) {
 	for {
 		if ok := webcam.Read(&img); !ok {
 			fmt.Printf("Device closed: %v\n", deviceID)
-			return "", nil
+			break
 		}
 		if img.Empty() {
 			continue
@@ -146,7 +99,7 @@ func (tf *TheFarm) AICam(deviceID int, proto, model string) (string, error) {
 			// classid := detections.GetFloatAt(r, 1)
 
 			confidence := detections.GetFloatAt(r, 2)
-			if confidence < 0.3 {
+			if confidence < 0.2 {
 				continue
 			}
 
@@ -163,7 +116,7 @@ func (tf *TheFarm) AICam(deviceID int, proto, model string) (string, error) {
 
 			// draw it
 			rect = image.Rect(int(left), int(top), int(right), int(bottom))
-			gocv.Rectangle(&img, rect, green, 3)
+			gocv.Rectangle(&img, rect, color, 3)
 		}
 
 		window.WaitKey(1)
@@ -173,22 +126,69 @@ func (tf *TheFarm) AICam(deviceID int, proto, model string) (string, error) {
 			CT := time.Now()
 			gocv.IMWrite(tmp, img)
 			croppedImg, err := Cropper(rect, tmp)
-			if err != nil {
-				return "", err
-			}
+			Errs("Error cropping image", err)
 
 			// Write out the file (image)
 			saveFile := fmt.Sprintf(filepath.Join(tf.faceDir, "%v:%v:%v.jpg"),
 				CT.Hour(), CT.Minute(), CT.Second())
 			filewriter, err := os.Create(saveFile)
+			Errs("Error creating file for jpeg.Encode", err)
 			jpeg.Encode(filewriter, croppedImg, &jpeg.Options{
-				Quality: 100, // Best quality
+				Quality: 80, // Best quality
 			})
+
+			tf.GombineSaveNLoad(saveFile)
+
 			modelSelector = ""
-			return saveFile, nil
 		}
 		window.IMShow(img)
 	}
+}
+
+// GombineSaveNLoad will gombine and save the facial image
+// and load the model with the saved image.
+func (tf *TheFarm) GombineSaveNLoad(fileFace string) {
+	// Here MODEL SELECTION and GOMBINE will occur.
+	var fmodel string
+	var fmodelgltf string
+
+	switch modelSelector {
+	case "Son":
+		fmodel = filepath.Join(tf.charDir, "Son.jpg")
+		fmodelgltf = filepath.Join(tf.charDir, "Son.gltf")
+	case "Father":
+		fmodel = filepath.Join(tf.charDir, "Father.jpg")
+		fmodelgltf = filepath.Join(tf.charDir, "Father.gltf")
+	case "Mother":
+		fmodel = filepath.Join(tf.charDir, "Mother.jpg")
+		fmodelgltf = filepath.Join(tf.charDir, "Mother.gltf")
+	case "Daughter":
+		fmodel = filepath.Join(tf.charDir, "Daughter.jpg")
+		fmodelgltf = filepath.Join(tf.charDir, "Daughter.gltf")
+	}
+
+	images := []*gombine.ImageData{}
+	imdModel := ImageDataGetter(fmodel)
+	imdFace := ImageDataGetter(fileFace)
+	images = append(images, &imdModel, &imdFace)
+	gombine.ProcessImages(images, "jpg", "bottom", fileFace)
+
+	tf.CreateChar(fmodelgltf, fileFace)
+}
+
+// ImageDataGetter returns image data from the provided file
+func ImageDataGetter(file string) gombine.ImageData {
+	fimg, err := os.Open(file)
+	Errs(fmt.Sprintf("Error opening file %s for gombine", file), err)
+	defer fimg.Close()
+
+	img, err := jpeg.Decode(fimg)
+	Errs(fmt.Sprintf("Error decoding jpeg %v while in ImageDataGetter", file), err)
+
+	imd, err := gombine.GetImageData(&img, file)
+	Errs("Error getting Image Data", err)
+
+	return imd
 }
 
 // Cropper crop the saved image from gocv
@@ -232,7 +232,6 @@ func TheFarmGui() {
 	)
 	vp := win.WinViewport2D()
 	// style sheet
-	// butwidth, butheight := "10em", "3em"
 	butBGColor := gi.Color{232, 232, 232, 255}
 	var css = ki.Props{
 		"button": ki.Props{
@@ -362,11 +361,13 @@ func TheFarmGui() {
 	button4.Tooltip = "click to select your character"
 
 	// -------------------- Button Click ---------------------//
+	modelBuffer := "Father" // initial focused value
 	button1.ButtonSig.Connect(rec.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
 			if sig == int64(gi.ButtonReleased) {
 				ButStChanger(curFocus, 1, button1)
 				curFocus = 1
+				modelBuffer = "Father"
 			}
 		})
 	button2.ButtonSig.Connect(rec.This(),
@@ -374,6 +375,7 @@ func TheFarmGui() {
 			if sig == int64(gi.ButtonReleased) {
 				ButStChanger(curFocus, 2, button2)
 				curFocus = 2
+				modelBuffer = "Son"
 			}
 		})
 	button3.ButtonSig.Connect(rec.This(),
@@ -381,6 +383,7 @@ func TheFarmGui() {
 			if sig == int64(gi.ButtonReleased) {
 				ButStChanger(curFocus, 3, button3)
 				curFocus = 3
+				modelBuffer = "Mother"
 			}
 		})
 	button4.ButtonSig.Connect(rec.This(),
@@ -388,12 +391,14 @@ func TheFarmGui() {
 			if sig == int64(gi.ButtonReleased) {
 				ButStChanger(curFocus, 4, button4)
 				curFocus = 4
+				modelBuffer = "Daughter"
 			}
 		})
 	butSnap.ButtonSig.Connect(rec.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
 			if sig == int64(gi.ButtonReleased) {
 				fmt.Println("SnapShot!")
+				modelSelector = modelBuffer
 			}
 		})
 	win.MainMenuUpdated()
