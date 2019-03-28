@@ -349,14 +349,13 @@ func main() {
 	} else {
 		tf.audioAvailable = true
 		tf.LoadAudio()
-		// tf.musicPlayer.Play() // uncomment to play the music
+		tf.musicPlayer.Play() // uncomment to play the music
 	}
 	tf.LoadStage()
 	go tf.AICam(0,
 		"assets/data/deploy.prototxt",
 		"assets/data/res10300x300ssd140000.caffemodel")
 
-	tf.CreateChar(tf.charDir+"/Son.gltf", "/12:25:58.jpg")
 	// tf.CreateChar(tf.charDir+"/Father.gltf", "1.png")
 
 	tf.win.Subscribe(window.OnCursor, tf.onCursor)
