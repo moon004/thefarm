@@ -1,4 +1,5 @@
-A client (louis) project that is under construction
+A client project that is under construction, This software it automatically captures your facial image and generate
+a character(model) based on the options (Father, Mother, Daughter, Son) you selected.
 
 ### Powered by Blender, Golang combined
 
